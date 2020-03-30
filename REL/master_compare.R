@@ -14,7 +14,7 @@ library("CVXR")
 
 b = c(0.9, 0.9)
 
-T.Result = L.Result = array(0, c(100, 4, 3))
+T.Result = L.Result = array(0, c(100, 4, 4))
 
 case = 0
 for(n in c(120, 240)){
@@ -47,9 +47,14 @@ for(n in c(120, 240)){
 			t0 = Sys.time()
 			L.nloptr = -innerloop.nloptr(b, y, X, Z, tau)
 			t.nloptr = Sys.time() - t0
+			
+			t0 = Sys.time()
+			L.cvxr.nodcp = -innerloop.cvxr.nodcp(b, y, X, Z, tau)
+			t.cvxr.nodcp = Sys.time() - t0
+			
 
-			T.Result[r, case, ] = c(t.mosek, t.cvxr, t.nloptr)
-			L.Result[r, case, ] = c(L.mosek, L.cvxr, L.nloptr)
+			T.Result[r, case, ] = c(t.mosek, t.cvxr, t.cvxr.nodcp, t.nloptr)
+			L.Result[r, case, ] = c(L.mosek, L.cvxr, L.cvxr.nodcp, L.nloptr)
 
 		}
 
@@ -58,9 +63,10 @@ for(n in c(120, 240)){
 
 Result.mosek = cbind(L.Result[, , 1], T.Result[, , 1])
 Result.cvxr = cbind(L.Result[, , 2], T.Result[, , 2])
-Result.nloptr = cbind(L.Result[, , 3], T.Result[, , 3])
+Result.cvxr.nodcp = cbind(L.Result[, , 3], T.Result[, , 3])
+Result.nloptr = cbind(L.Result[, , 4], T.Result[, , 4])
 
 Time.Sum = apply(T.Result, c(2,3), sum)
-colnames(Time.Sum) = c("Rmosek", "CVXR", "nloptr")
+colnames(Time.Sum) = c("Rmosek", "CVXR", "CVXR_nodcp", "nloptr")
 write.csv(Time.Sum, "REL_time_compare_R.csv")
 save.image("REL_Compare_Result.RData")
